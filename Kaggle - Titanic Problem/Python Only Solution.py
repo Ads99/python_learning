@@ -23,14 +23,17 @@ data = np.array(data)            # Then convert from a list to an array
                                  # Be aware that each item is currently
                                  # a string in this format
 
+# print header
+# print data[1]
+
 '''
 The size() function counts how many elements are in
 the array and sum() (as you would expect) sums up
 the elements in the array
 '''
 
-number_passengers = np.size(data[0::,1].astype(np.float))
-number_survived = np.sum(data[0::,1].astype(np.float))
+number_passengers = np.size(data[0::, 1].astype(np.float))
+number_survived = np.sum(data[0::, 1].astype(np.float))
 proportion_survivors = number_survived / number_passengers
 
 '''
@@ -39,10 +42,10 @@ any elements equal female (and for males, 'do not equal female'), and then use
 this to determine the number of females and males that survived
 '''
 
-women_only_stats = data[0::,4] == "female"  # This finds all
+women_only_stats = data[0::, 4] == "female"  # This finds all
                                             # the elements in the gender
                                             # column that equals "female"
-men_only_stats = data[0::,4] != "female"    # This fins where all the
+men_only_stats = data[0::, 4] != "female"    # This fins where all the
                                             # elements do not equal
                                             # female (i.e. male)
 '''
@@ -52,8 +55,8 @@ who survived:
 '''
 
 # Using the index from above we select the females and males separately
-women_onboard = data[women_only_stats,1].astype(np.float)
-men_onboard = data[men_only_stats,1].astype(np.float)
+women_onboard = data[women_only_stats, 1].astype(np.float)
+men_onboard = data[men_only_stats, 1].astype(np.float)
 
 # Then we find the proportions of them that survived
 proportion_women_survived = np.sum(women_onboard) / np.size(women_onboard)
@@ -88,9 +91,9 @@ prediction_file_object.writerow(["PassengerID", "Survived"])
 
 for row in test_file_object:                            # For each row in test.csv
     if row[3] == 'female':                              # is it a female, if yes then
-        prediction_file_object.writerow([row[0],'1'])   # predict 1
+        prediction_file_object.writerow([row[0], '1'])   # predict 1
     else:
-        prediction_file_object.writerow([row[0],'0'])   # predict 0
+        prediction_file_object.writerow([row[0], '0'])   # predict 0
 test_file.close()
 prediction_file.close()
 
@@ -114,8 +117,8 @@ Pythonising the second submission
 
 # So we add a ceiling
 fare_ceiling = 40
-# then modify the data in the Fare column to = 39, if it is greater or equal to the ceoling
-data[ data[0::,9].astype(np.float) >= fare_ceiling, 9] = fare_ceiling - 1.0
+# then modify the data in the Fare column to = 39, if it is greater or equal to the ceiling
+data[data[0::, 9].astype(np.float) >= fare_ceiling, 9] = fare_ceiling - 1.0
 
 fare_bracket_size = 10
 number_of_price_brackets = fare_ceiling / fare_bracket_size
@@ -127,3 +130,82 @@ number_of_classes = 3
 # Take the length of an array of unique values in column index 2
 number_of_classes = len(np.unique(data[0::,2]))
 
+# Initialise the survival table with all zeros
+survival_table = np.zeros((2, number_of_classes, number_of_price_brackets))
+
+'''
+Now that these are set up, you can loop through each variable and find all those
+passengers that agress with the statements:
+'''
+
+for i in xrange(number_of_classes):                 # loop through each class
+    for j in xrange(number_of_price_brackets):      # loop through each price bin
+
+        women_only_stats = data[                                            # Which element
+            (data[0::, 4] == "female")                                      # is a female
+            &(data[0::, 2].astype(np.float) == i+1)                         # and was ith class
+            &(data[0::, 9].astype(np.float) >= j*fare_bracket_size)         # was greater than this bin
+            &(data[0::, 9].astype(np.float) < (j+1)*fare_bracket_size)      # and less than the next bin
+            , 1]                                                            # in the 2nd col
+
+        men_only_stats = data[                                              # Which element
+            (data[0::, 4] != "female")                                      # is a male
+            &(data[0::, 2].astype(np.float) == i+1)                         # and was ith class
+            &(data[0::, 9].astype(np.float) >= j*fare_bracket_size)         # was greater than this bin
+            &(data[0::, 9].astype(np.float) < (j+1)*fare_bracket_size)      # and less than the next bin
+            , 1]
+
+        survival_table[0,i,j] = np.mean(women_only_stats.astype(np.float))
+        survival_table[1,i,j] = np.mean(men_only_stats.astype(np.float))
+
+survival_table[ survival_table != survival_table ] = 0
+
+print survival_table
+
+'''
+For our second model, let's again assume any probability greater than or equal to 0.5
+should result in our predicting survival -- and less than 0.5 should not. We can
+update our survival table with:
+'''
+
+survival_table[ survival_table < 0.5 ] = 0
+survival_table[ survival_table >= 0.5 ] = 1
+
+print survival_table
+
+'''
+When we go through each row of the test file we can find what criteria fit each new
+passenger and assign them a 1 or 0 according to our survival table. As previously,
+let's open up the test file to read (and skip the header row), and also a new file
+to write to, called 'genderclassmodel.csv'
+'''
+test_file = open('test.csv', 'rb')
+test_file_object = csv.reader(test_file)
+header = test_file_object.next()
+predictions_file = open('genderclassmodel_AB.csv', 'wb')
+p = csv.writer(predictions_file)
+p.writerow(["PassengerId", "Survived"])
+
+'''
+As with the previous model, we can take the first passenger, look at his/her gender,
+class and price of ticket, and assign a Survived label. The problem is that each
+passenger in the test.csv file is not binned. We should loop through each bin and see
+if the price of their ticket falls in that bin. If so, we can break the loop (so we don't
+go through all the bins) and assign that bin:
+'''
+
+for row in test_file_object:
+
+    for j in xrange(number_of_price_brackets):
+
+        try:
+            row[8] = float(row[8])
+        except:
+            bin_fare = 3 - float(row[1])
+            break
+        if row[8] > fare_ceiling:
+            bin_fare = number_of_price_brackets-1
+            break
+        if row[8] >= j * fare_bracket_size and row[8] < (j+1) * fare_bracket_size:
+            bin_fare = j
+            break
