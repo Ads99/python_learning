@@ -194,18 +194,33 @@ if the price of their ticket falls in that bin. If so, we can break the loop (so
 go through all the bins) and assign that bin:
 '''
 
-for row in test_file_object:
+for row in test_file_object:                                                    # Loop through each passenger in data
+    for j in xrange(number_of_price_brackets):                                  # For each passenger we loop thru each
+                                                                                # price bin
+        try:                                                                    # Some passengers have no
+            row[8] = float(row[8])                                              # Fare data so try to make a float
+        except:                                                                 # If fails: no data, so bin the fare
+            bin_fare = 3 - float(row[1])                                        # according Pclass
+            break                                                               # Break from the loop
+        if row[8] > fare_ceiling:                                               # If there is data see if
+                                                                                # it is greater than fare
+                                                                                # ceiling we set earlier
+            bin_fare = number_of_price_brackets-1                               # If so set to highest bin
+            break                                                               # And then break loop
+        if row[8] >= j * fare_bracket_size\
+                and row[8] < \
+                (j+1) * fare_bracket_size:                                      # If passes these tests
+                                                                                # then loop through each bin
+            bin_fare = j                                                        # then assign index
+            break
 
-    for j in xrange(number_of_price_brackets):
+        if row[3] == 'female':                                                  # If the passenger is female
+            p.writerow([row[0], "%d" %\
+                       int(survival_table[0, float(row[1])-1, bin_fare])])
+        else:                                                                   #else if male
+            p.writerow([row[0], "%d" % \
+                       int(survival_Table[1, float(row[1])-1, bin_fare])])
 
-        try:
-            row[8] = float(row[8])
-        except:
-            bin_fare = 3 - float(row[1])
-            break
-        if row[8] > fare_ceiling:
-            bin_fare = number_of_price_brackets-1
-            break
-        if row[8] >= j * fare_bracket_size and row[8] < (j+1) * fare_bracket_size:
-            bin_fare = j
-            break
+# Close out the files.
+test_file.close()
+predictions_file.close()
