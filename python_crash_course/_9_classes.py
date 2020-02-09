@@ -140,7 +140,7 @@ print(my_tesla.get_descriptive_name())
 my_tesla.describe_battery()
 
 # Instances as Attributes
-# Part of one class can be re-written as another class (you may want to do this 
+# Part of one class can be re-written as another class (you may want to do this
 # when your Classes are getting too large and can be split off)
 class Battery():
     """A simple attempt to model an electric car battery"""
@@ -278,7 +278,7 @@ user_lynn.privileges.show_privileges()
 # Use the final version of electric_car.py. Add a method to the Battery class
 # called upgrade_battery(). This method should check the battery size and set
 # the capacity to 85 if it isn't already. Make an electric car with a default
-# battery size, call get_range() once, and then call get_range() a second time 
+# battery size, call get_range() once, and then call get_range() a second time
 # after upgrading the battery.
 
 # see from rows 166 for upgrade_battery() method
