@@ -1,0 +1,3 @@
+In Python you can scrape websites
+In Python you can analyse text files easily
+In Python you can do machine learning
