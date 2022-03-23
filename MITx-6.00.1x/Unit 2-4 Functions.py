@@ -23,7 +23,7 @@ def gcdIter(a, b):
         if a % i == 0 and b % i == 0:
             return i
 
-#print(gcdIter(7,4))
+print(gcdIter(7,4))
 
 # Exercise: gcd recur
 # A clever mathematical trick (due to Euclid) makes it easy to find greatest common divisors. Suppose that a and b are
